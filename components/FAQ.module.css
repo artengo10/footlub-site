@@ -1,0 +1,121 @@
+.section {
+  padding: 72px 0 96px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 48px 0 64px;
+  }
+}
+
+.title {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+/* Центрируем весь блок */
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.item[open] {
+  border-color: rgba(79, 142, 247, 0.25);
+}
+
+.question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  list-style: none;
+  gap: 12px;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .question {
+    font-size: 14px;
+    padding: 14px 16px;
+  }
+}
+
+.question::-webkit-details-marker {
+  display: none;
+}
+
+.question::after {
+  content: '+';
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.item[open] .question::after {
+  content: '−';
+}
+
+.answer {
+  padding: 12px 18px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .answer {
+    padding: 10px 16px 14px;
+    font-size: 13px;
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+.toggle {
+  margin-top: 16px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  border: 1px solid rgba(79, 142, 247, 0.35);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: background 0.2s, border-color 0.2s;
+  width: 100%;
+  max-width: 800px;
+}
+
+.toggle:hover {
+  background: rgba(79, 142, 247, 0.08);
+  border-color: rgba(79, 142, 247, 0.6);
+}

@@ -1,0 +1,114 @@
+.section {
+  padding: 72px 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 48px 0;
+  }
+}
+
+.title {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+}
+
+/* ── Desktop: 3 equal columns ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* ── Mobile: horizontal scroll row ── */
+@media (max-width: 900px) {
+  .grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding-bottom: 4px;
+    /* bleed to container edge so cards go edge-to-edge */
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .grid::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  transition: border-color 0.2s;
+  /* Desktop: grid handles sizing */
+}
+
+@media (max-width: 900px) {
+  .card {
+    /* Fixed width so cards peek at the edge — shows there's more */
+    flex: 0 0 min(300px, 78vw);
+    scroll-snap-align: start;
+  }
+}
+
+.card:hover {
+  border-color: rgba(79, 142, 247, 0.3);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sport {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rating {
+  font-size: 12px;
+  color: #f5a623;
+}
+
+.text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
