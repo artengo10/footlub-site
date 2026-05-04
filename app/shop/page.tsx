@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import styles from './shop.module.css';
 
 export const metadata: Metadata = {
-  title: 'Магазин — FootLab',
+  title: 'Магазин — FootLub',
   description:
-    'Три типа индивидуальных спортивных стелек FootLab: Базовая, Спортивная, Профессиональная. Цены от 3 000 до 4 500 ₽. Доставка по всей России.',
-  alternates: { canonical: 'https://footlab.ru/shop' },
+    'Три типа индивидуальных спортивных стелек FootLub: Базовая, Спортивная, Профессиональная. Цены от 3 000 до 4 500 ₽. Доставка по всей России.',
+  alternates: { canonical: 'https://footlub.ru/shop' },
 };
 
 const products = [
@@ -36,7 +36,7 @@ export default function ShopPage() {
       <div className="container">
         <h1 className={styles.title}>Магазин</h1>
         <p className={styles.sub}>
-          Все стельки изготавливаются индивидуально после сканирования стопы в приложении FootLab.
+          Все стельки изготавливаются индивидуально после сканирования стопы в приложении FootLub.
         </p>
         <div className={styles.grid}>
           {products.map((p) => (

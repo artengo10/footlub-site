@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /login
 
-Sitemap: https://footlab.ru/sitemap.xml
+Sitemap: https://footlub.ru/sitemap.xml

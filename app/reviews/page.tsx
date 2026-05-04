@@ -3,10 +3,10 @@ import { reviews } from '@/data/reviews';
 import styles from './reviews.module.css';
 
 export const metadata: Metadata = {
-  title: 'Отзывы — FootLab',
+  title: 'Отзывы — FootLub',
   description:
-    'Отзывы покупателей FootLab: бегуны, футболисты, велосипедисты и другие спортсмены об индивидуальных стельках FootLab.',
-  alternates: { canonical: 'https://footlab.ru/reviews' },
+    'Отзывы покупателей FootLub: бегуны, футболисты, велосипедисты и другие спортсмены об индивидуальных стельках FootLub.',
+  alternates: { canonical: 'https://footlub.ru/reviews' },
 };
 
 export default function ReviewsPage() {

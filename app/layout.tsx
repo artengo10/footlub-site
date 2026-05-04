@@ -12,28 +12,28 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'FootLab — индивидуальные спортивные стельки с доставкой по России',
+  title: 'FootLub — индивидуальные спортивные стельки с доставкой по России',
   description:
-    'FootLab — первый российский сервис индивидуальных спортивных стелек. Сканируйте стопу за 30 секунд в приложении на iPhone и получите стельки из TPU 95A с доставкой по всей России.',
+    'FootLub — первый российский сервис индивидуальных спортивных стелек. Сканируйте стопу за 30 секунд в приложении на iPhone и получите стельки из TPU 95A с доставкой по всей России.',
   keywords: [
     'индивидуальные стельки',
     'спортивные стельки',
     'стельки для бега',
-    'стельки FootLab',
+    'стельки FootLub',
     'ортопедические стельки купить',
     'стельки под заказ',
     'TPU стельки',
   ],
-  metadataBase: new URL('https://footlab.ru'),
-  alternates: { canonical: 'https://footlab.ru' },
+  metadataBase: new URL('https://footlub.ru'),
+  alternates: { canonical: 'https://footlub.ru' },
   openGraph: {
-    title: 'FootLab — индивидуальные спортивные стельки',
+    title: 'FootLub — индивидуальные спортивные стельки',
     description:
       'Сканируйте стопу за 30 секунд. Стельки под вашу анатомию — с доставкой по всей России.',
     locale: 'ru_RU',
     type: 'website',
-    url: 'https://footlab.ru',
-    siteName: 'FootLab',
+    url: 'https://footlub.ru',
+    siteName: 'FootLub',
   },
   robots: { index: true, follow: true },
 };
@@ -43,9 +43,9 @@ const structuredData = {
   '@graph': [
     {
       '@type': 'Organization',
-      '@id': 'https://footlab.ru/#org',
-      name: 'FootLab',
-      url: 'https://footlab.ru',
+      '@id': 'https://footlub.ru/#org',
+      name: 'FootLub',
+      url: 'https://footlub.ru',
       description:
         'Индивидуальные спортивные стельки с заказом через приложение и доставкой по всей России.',
       areaServed: 'RU',
@@ -53,15 +53,15 @@ const structuredData = {
         '@type': 'ContactPoint',
         contactType: 'customer service',
         availableLanguage: 'Russian',
-        url: 'https://t.me/footlab_support',
+        url: 'https://t.me/footlub_support',
       },
-      sameAs: ['https://t.me/footlab_support'],
+      sameAs: ['https://t.me/footlub_support'],
     },
     {
       '@type': 'LocalBusiness',
-      '@id': 'https://footlab.ru/#business',
-      name: 'FootLab',
-      url: 'https://footlab.ru',
+      '@id': 'https://footlub.ru/#business',
+      name: 'FootLub',
+      url: 'https://footlub.ru',
       description:
         'Индивидуальные спортивные стельки из TPU 95A. Сканирование стопы через приложение iPhone за 30 секунд.',
       address: {

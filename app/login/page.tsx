@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import styles from './login.module.css';
 
 export const metadata: Metadata = {
-  title: 'Войти — FootLab',
+  title: 'Войти — FootLub',
   robots: { index: false, follow: false },
 };
 
@@ -10,9 +10,9 @@ export default function LoginPage() {
   return (
     <section className={styles.wrap}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Войти в FootLab</h1>
+        <h1 className={styles.title}>Войти в FootLub</h1>
         <p className={styles.sub}>
-          Личный кабинет в разработке. Заказы оформляются через приложение FootLab для iPhone.
+          Личный кабинет в разработке. Заказы оформляются через приложение FootLub для iPhone.
         </p>
         <form className={styles.form}>
           <input

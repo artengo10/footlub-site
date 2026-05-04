@@ -6,12 +6,12 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={`container ${styles.inner}`}>
         <div className={styles.left}>
-          <span className={styles.logo}>FootLab</span>
-          <p className={styles.copy}>© 2025 FootLab. Нижний Новгород — доставка по всей России</p>
+          <span className={styles.logo}>FootLub</span>
+          <p className={styles.copy}>© 2025 FootLub. Нижний Новгород — доставка по всей России</p>
         </div>
         <div className={styles.links}>
           <a
-            href="https://t.me/footlab_support"
+            href="https://t.me/footlub_support"
             target="_blank"
             rel="noopener noreferrer"
           >

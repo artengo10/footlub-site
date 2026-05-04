@@ -37,8 +37,8 @@ export default function Header() {
     <>
       <header className={styles.header}>
         <div className={`container ${styles.inner}`}>
-          <Link href="/" className={styles.logo} aria-label="FootLab — на главную">
-            <span className={styles.logoText}>FootLab</span>
+          <Link href="/" className={styles.logo} aria-label="FootLub — на главную">
+            <span className={styles.logoText}>FootLub</span>
           </Link>
           <div className={styles.right}>
             <button

@@ -5,7 +5,7 @@ import styles from './BurgerMenu.module.css';
 
 const navLinks = [
   { label: 'Магазин', desc: '3 типа стелек — от 3 000 ₽', href: '/shop' },
-  { label: 'Отзывы', desc: 'Покупатели о FootLab', href: '/reviews' },
+  { label: 'Отзывы', desc: 'Покупатели о FootLub', href: '/reviews' },
   { label: 'Вопросы и ответы', desc: '30 вопросов о продукте', href: '/#faq' },
   { label: 'Контакты', desc: 'Telegram и WhatsApp', href: '/contacts' },
 ];
@@ -36,7 +36,7 @@ export default function BurgerMenu({
         aria-label="Навигация"
       >
         <div className={styles.header}>
-          <span className={styles.logo}>FootLab</span>
+          <span className={styles.logo}>FootLub</span>
           <button className={styles.close} onClick={onClose} aria-label="Закрыть меню">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -64,7 +64,7 @@ export default function BurgerMenu({
 
         <div className={styles.social}>
           <a
-            href="https://t.me/footlab_support"
+            href="https://t.me/footlub_support"
             className={styles.socialLink}
             target="_blank"
             rel="noopener noreferrer"

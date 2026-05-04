@@ -9,7 +9,7 @@ export default function Hero() {
           <span className={styles.accent}>созданные под вашу стопу</span>
         </h1>
         <p className={styles.sub}>
-          Сканируйте стопу за 30 секунд в приложении FootLab на iPhone — получите стельки из
+          Сканируйте стопу за 30 секунд в приложении FootLub на iPhone — получите стельки из
           TPU&nbsp;95A с доставкой по всей России.
         </p>
         <a href="#" className={styles.cta}>

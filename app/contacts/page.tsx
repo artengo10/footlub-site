@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import styles from './contacts.module.css';
 
 export const metadata: Metadata = {
-  title: 'Контакты — FootLab',
-  description: 'Свяжитесь с FootLab через Telegram или WhatsApp. Нижний Новгород, доставка по всей России.',
-  alternates: { canonical: 'https://footlab.ru/contacts' },
+  title: 'Контакты — FootLub',
+  description: 'Свяжитесь с FootLub через Telegram или WhatsApp. Нижний Новгород, доставка по всей России.',
+  alternates: { canonical: 'https://footlub.ru/contacts' },
 };
 
 export default function ContactsPage() {
@@ -17,7 +17,7 @@ export default function ContactsPage() {
         </p>
         <div className={styles.cards}>
           <a
-            href="https://t.me/footlab_support"
+            href="https://t.me/footlub_support"
             className={styles.card}
             target="_blank"
             rel="noopener noreferrer"
@@ -27,7 +27,7 @@ export default function ContactsPage() {
             </svg>
             <div>
               <div className={styles.cardTitle}>Telegram</div>
-              <div className={styles.cardValue}>@footlab_support</div>
+              <div className={styles.cardValue}>@footlub_support</div>
             </div>
           </a>
           <a
