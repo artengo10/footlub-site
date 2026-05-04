@@ -32,7 +32,6 @@
     -webkit-overflow-scrolling: touch;
     gap: 12px;
     padding-bottom: 4px;
-    /* bleed to container edge so cards go edge-to-edge */
     margin: 0 -20px;
     padding-left: 20px;
     padding-right: 20px;
@@ -43,72 +42,35 @@
   }
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 24px;
-  transition: border-color 0.2s;
-  /* Desktop: grid handles sizing */
-}
-
+/* cardWrap controls scroll-snap sizing on mobile */
 @media (max-width: 900px) {
-  .card {
-    /* Fixed width so cards peek at the edge — shows there's more */
+  .cardWrap {
     flex: 0 0 min(300px, 78vw);
     scroll-snap-align: start;
   }
 }
 
-.card:hover {
-  border-color: rgba(79, 142, 247, 0.3);
-}
-
-.top {
+/* "See all" link row */
+.allWrap {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  justify-content: center;
+  margin-top: 28px;
 }
 
-.avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+.allLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.allLink:hover {
   background: var(--accent);
   color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.name {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 3px;
-}
-
-.meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sport {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.rating {
-  font-size: 12px;
-  color: #f5a623;
-}
-
-.text {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.65;
 }

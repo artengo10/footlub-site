@@ -37,17 +37,7 @@ export default function Header() {
     <>
       <header className={styles.header}>
         <div className={`container ${styles.inner}`}>
-          <Link href="/" className={styles.logo} aria-label="FootLub — на главную">
-            <span className={styles.logoText}>FootLub</span>
-          </Link>
-          <div className={styles.right}>
-            <button
-              className={styles.themeToggle}
-              onClick={toggle}
-              aria-label={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
-            >
-              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-            </button>
+          <div className={styles.left}>
             <button
               className={styles.burger}
               onClick={() => setOpen(true)}
@@ -57,6 +47,18 @@ export default function Header() {
               <span />
               <span />
               <span />
+            </button>
+            <Link href="/" className={styles.logo} aria-label="FootLub — на главную">
+              <span className={styles.logoText}>FootLub</span>
+            </Link>
+          </div>
+          <div className={styles.right}>
+            <button
+              className={styles.themeToggle}
+              onClick={toggle}
+              aria-label={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
             <Link href="/login" className={styles.profile} aria-label="Личный кабинет">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

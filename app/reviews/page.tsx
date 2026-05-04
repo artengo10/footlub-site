@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { reviews } from '@/data/reviews';
+import ReviewCard from '@/components/ReviewCard';
 import styles from './reviews.module.css';
 
 export const metadata: Metadata = {
@@ -16,19 +17,7 @@ export default function ReviewsPage() {
         <h1 className={styles.title}>Отзывы</h1>
         <div className={styles.grid}>
           {reviews.map((r) => (
-            <article key={r.id} className={styles.card}>
-              <div className={styles.top}>
-                <div className={styles.avatar}>{r.initials}</div>
-                <div>
-                  <div className={styles.name}>{r.name}</div>
-                  <div className={styles.meta}>
-                    <span className={styles.sport}>{r.sport}</span>
-                    <span className={styles.rating}>★ {r.rating.toFixed(1)}</span>
-                  </div>
-                </div>
-              </div>
-              <p className={styles.text}>{r.text}</p>
-            </article>
+            <ReviewCard key={r.id} r={r} />
           ))}
         </div>
       </div>

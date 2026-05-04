@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { reviews } from '@/data/reviews';
+import ReviewCard from './ReviewCard';
 import styles from './ReviewsSection.module.css';
 
 export default function ReviewsSection() {
@@ -10,20 +12,18 @@ export default function ReviewsSection() {
         <h2 className={styles.title}>Отзывы</h2>
         <div className={styles.grid}>
           {featured.map((r) => (
-            <article key={r.id} className={styles.card}>
-              <div className={styles.top}>
-                <div className={styles.avatar}>{r.initials}</div>
-                <div>
-                  <div className={styles.name}>{r.name}</div>
-                  <div className={styles.meta}>
-                    <span className={styles.sport}>{r.sport}</span>
-                    <span className={styles.rating}>★ {r.rating.toFixed(1)}</span>
-                  </div>
-                </div>
-              </div>
-              <p className={styles.text}>{r.text}</p>
-            </article>
+            <div key={r.id} className={styles.cardWrap}>
+              <ReviewCard r={r} />
+            </div>
           ))}
+        </div>
+        <div className={styles.allWrap}>
+          <Link href="/reviews" className={styles.allLink}>
+            Посмотреть все отзывы
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Link>
         </div>
       </div>
     </section>
