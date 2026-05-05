@@ -97,25 +97,3 @@
   }
 }
 
-.hidden {
-  display: none;
-}
-
-.toggle {
-  margin-top: 16px;
-  padding: 12px 32px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--accent);
-  border: 1px solid rgba(79, 142, 247, 0.35);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  transition: background 0.2s, border-color 0.2s;
-  width: 100%;
-  max-width: 800px;
-}
-
-.toggle:hover {
-  background: rgba(79, 142, 247, 0.08);
-  border-color: rgba(79, 142, 247, 0.6);
-}
