@@ -111,7 +111,7 @@
   flex-shrink: 0;
 }
 
-.cta {
+.more {
   display: block;
   text-align: center;
   background: var(--accent);
@@ -124,7 +124,7 @@
   transition: background 0.2s, transform 0.15s;
 }
 
-.cta:hover {
+.card:hover .more {
   background: var(--accent-hover);
   transform: translateY(-1px);
 }

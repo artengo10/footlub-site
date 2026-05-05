@@ -1,0 +1,125 @@
+.article {
+  padding: 48px 0 96px;
+}
+
+.inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.back {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  transition: color 0.2s;
+}
+
+.back:hover { color: var(--accent); }
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(79, 142, 247, 0.1);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+
+.excerpt {
+  font-size: 17px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 40px;
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+}
+
+.content {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+}
+
+.content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 36px 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.content p {
+  margin-bottom: 16px;
+}
+
+.content ul,
+.content ol {
+  padding-left: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.content li {
+  line-height: 1.6;
+}
+
+.content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.cta {
+  margin-top: 56px;
+  padding: 28px;
+  background: linear-gradient(135deg, rgba(79, 142, 247, 0.08) 0%, rgba(79, 142, 247, 0.03) 100%);
+  border: 1px solid rgba(79, 142, 247, 0.2);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.ctaText {
+  font-size: 15px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 200px;
+}
+
+.ctaBtn {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.ctaBtn:hover { background: var(--accent-hover); }

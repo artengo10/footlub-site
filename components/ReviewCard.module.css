@@ -2,63 +2,91 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 22px 24px;
-  transition: border-color 0.2s;
+  padding: 18px 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .card:hover {
-  border-color: rgba(79, 142, 247, 0.3);
+  border-color: rgba(79, 142, 247, 0.35);
+  box-shadow: 0 4px 20px rgba(79, 142, 247, 0.07);
 }
 
 .top {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
+.info {
+  min-width: 0;
+  flex: 1;
+}
+
 .name {
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 3px;
+  font-size: 13px;
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.occupation {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .sport {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 10px;
+  color: var(--accent);
+  background: rgba(79, 142, 247, 0.12);
+  padding: 2px 6px;
+  border-radius: 20px;
+  font-weight: 600;
 }
 
 .rating {
-  font-size: 12px;
+  font-size: 11px;
   color: #f5a623;
+  font-weight: 600;
 }
 
 .textWrap {
   position: relative;
+  flex: 1;
 }
 
 .text {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.65;
   overflow: hidden;
@@ -78,7 +106,7 @@
   justify-content: center;
   margin-top: 6px;
   color: var(--text-muted);
-  transition: color 0.2s, transform 0.2s;
+  transition: color 0.2s;
   width: 100%;
 }
 

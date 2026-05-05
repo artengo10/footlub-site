@@ -5,6 +5,7 @@ import styles from './BurgerMenu.module.css';
 
 const navLinks = [
   { label: 'Магазин', desc: '3 типа стелек — от 3 000 ₽', href: '/shop' },
+  { label: 'Блог', desc: 'Статьи о здоровье стоп', href: '/blog' },
   { label: 'Отзывы', desc: 'Покупатели о FootLub', href: '/reviews' },
   { label: 'Вопросы и ответы', desc: '30 вопросов о продукте', href: '/#faq' },
   { label: 'Контакты', desc: 'Telegram и WhatsApp', href: '/contacts' },

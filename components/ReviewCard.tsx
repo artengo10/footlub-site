@@ -10,8 +10,9 @@ export default function ReviewCard({ r }: { r: Review }) {
     <article className={styles.card}>
       <div className={styles.top}>
         <div className={styles.avatar}>{r.initials}</div>
-        <div>
+        <div className={styles.info}>
           <div className={styles.name}>{r.name}</div>
+          <div className={styles.occupation}>{r.occupation}</div>
           <div className={styles.meta}>
             <span className={styles.sport}>{r.sport}</span>
             <span className={styles.rating}>★ {r.rating.toFixed(1)}</span>

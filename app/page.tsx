@@ -1,5 +1,6 @@
 import Hero from '@/components/Hero';
 import ReviewsSection from '@/components/ReviewsSection';
+import BlogPreview from '@/components/BlogPreview';
 import FAQ from '@/components/FAQ';
 import { faq } from '@/data/faq';
 
@@ -22,6 +23,7 @@ export default function Home() {
       />
       <Hero />
       <ReviewsSection />
+      <BlogPreview />
       <FAQ />
     </>
   );
