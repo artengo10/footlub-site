@@ -8,8 +8,9 @@ export function generateStaticParams() {
   return posts.map((p) => ({ slug: p.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const post = posts.find((p) => p.slug === params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = posts.find((p) => p.slug === slug);
   if (!post) return {};
   return {
     title: `${post.title} — FootLub`,
@@ -19,8 +20,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-  const post = posts.find((p) => p.slug === params.slug);
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = posts.find((p) => p.slug === slug);
   if (!post) notFound();
 
   const schema = {
@@ -47,10 +49,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           </div>
           <h1 className={styles.title}>{post.title}</h1>
           <p className={styles.excerpt}>{post.excerpt}</p>
-          <div
-            className={styles.content}
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          <div className={styles.content} dangerouslySetInnerHTML={{ __html: post.content }} />
           <div className={styles.cta}>
             <p className={styles.ctaText}>Подберите стельки под вашу стопу — сканирование за 30 секунд в приложении</p>
             <Link href="/shop" className={styles.ctaBtn}>Выбрать стельки</Link>

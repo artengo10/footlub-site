@@ -8,8 +8,9 @@ export function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const p = products.find((x) => x.slug === params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const p = products.find((x) => x.slug === slug);
   if (!p) return {};
   return {
     title: `Стелька «${p.name}» — FootLub`,
@@ -18,8 +19,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const p = products.find((x) => x.slug === params.slug);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const p = products.find((x) => x.slug === slug);
   if (!p) notFound();
 
   const others = products.filter((x) => x.slug !== p.slug);
@@ -52,12 +54,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             <p className={styles.tagline}>{p.tagline}</p>
             <div className={styles.price}>{p.price}</div>
             <p className={styles.desc}>{p.longDesc}</p>
-            <a
-              href="https://apps.apple.com"
-              className={styles.cta}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="https://apps.apple.com" className={styles.cta} target="_blank" rel="noopener noreferrer">
               Заказать в приложении
             </a>
             <p className={styles.hint}>Скачайте FootLub, отсканируйте стопу — стелька придёт за 5–7 дней</p>
@@ -77,7 +74,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 ))}
               </ul>
             </div>
-
             <div className={styles.sports}>
               <h2 className={styles.sportsTitle}>Виды спорта</h2>
               <div className={styles.sportsTags}>
