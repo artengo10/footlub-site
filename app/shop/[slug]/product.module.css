@@ -2,14 +2,26 @@
   padding: 48px 0 96px;
 }
 
-.back {
-  display: inline-block;
-  font-size: 14px;
-  color: var(--text-muted);
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 32px;
-  transition: color 0.2s;
 }
-.back:hover { color: var(--accent); }
+
+.breadcrumbSep {
+  font-size: 13px;
+  color: var(--border);
+}
+
+.breadcrumbShop {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+
+.breadcrumbShop:hover { color: var(--accent); }
 
 /* ── Hero ── */
 .hero {

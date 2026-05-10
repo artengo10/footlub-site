@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import BackToHome from '@/components/BackToHome';
 import styles from './contacts.module.css';
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export default function ContactsPage() {
   return (
     <section className={styles.section}>
       <div className="container">
+        <BackToHome />
         <h1 className={styles.title}>Контакты</h1>
         <p className={styles.sub}>
           Нижний Новгород — доставка по всей России через СДЭК и Почту России.

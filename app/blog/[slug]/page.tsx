@@ -40,7 +40,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div className="container">
         <div className={styles.inner}>
-          <Link href="/blog" className={styles.back}>← Все статьи</Link>
+          <nav className={styles.breadcrumb}>
+            <Link href="/" className={styles.breadcrumbLink}>← Главная</Link>
+            <span className={styles.breadcrumbSep}>/</span>
+            <Link href="/blog" className={styles.breadcrumbLink}>Статьи</Link>
+          </nav>
           <div className={styles.meta}>
             <span className={styles.time}>{post.readTime} мин чтения</span>
             <span className={styles.date}>

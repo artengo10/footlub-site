@@ -6,6 +6,17 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './login.module.css';
 
+function HomeArrow() {
+  return (
+    <Link href="/" className={styles.homeLink}>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 12H5M5 12l7-7M5 12l7 7" />
+      </svg>
+      Главная
+    </Link>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { refresh } = useAuth();
@@ -41,6 +52,7 @@ export default function LoginPage() {
   return (
     <div className={styles.wrap}>
       <div className={styles.card}>
+        <HomeArrow />
         <h1 className={styles.title}>Войти в FootLub</h1>
         <p className={styles.sub}>
           Отслеживайте заказы и управляйте данными сканирования стопы

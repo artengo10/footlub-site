@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { posts } from '@/data/posts';
 import BlogContent from '@/components/BlogContent';
+import BackToHome from '@/components/BackToHome';
 import styles from './blog.module.css';
 
 export const metadata: Metadata = {
@@ -15,11 +16,12 @@ export default async function BlogPage({
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const { category = '' } = await searchParams;
+  const { category = '__new__' } = await searchParams;
 
   return (
     <section className={styles.section}>
       <div className="container">
+        <BackToHome />
         <h1 className={styles.title}>Статьи</h1>
         <p className={styles.sub}>О здоровье стоп, выборе стелек и спортивных нагрузках</p>
         <Suspense>

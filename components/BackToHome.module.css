@@ -1,0 +1,19 @@
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--accent);
+}
+
+/* When used inside a breadcrumb nav, reset the bottom margin */
+nav .link {
+  margin-bottom: 0;
+}

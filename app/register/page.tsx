@@ -6,6 +6,17 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './register.module.css';
 
+function HomeArrow() {
+  return (
+    <Link href="/" className={styles.homeLink}>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 12H5M5 12l7-7M5 12l7 7" />
+      </svg>
+      Главная
+    </Link>
+  );
+}
+
 type Step = 'form' | 'otp';
 
 export default function RegisterPage() {
@@ -95,6 +106,7 @@ export default function RegisterPage() {
       <div className={styles.card}>
         {step === 'form' ? (
           <>
+            <HomeArrow />
             <h1 className={styles.title}>Регистрация</h1>
             <p className={styles.sub}>
               Создайте аккаунт для отслеживания заказов и сохранения данных сканирования
@@ -142,6 +154,7 @@ export default function RegisterPage() {
           </>
         ) : (
           <>
+            <HomeArrow />
             <h1 className={styles.title}>Подтверждение</h1>
             <p className={styles.sub}>
               Мы отправили 6-значный код на <strong>{email}</strong>. Введите его ниже.

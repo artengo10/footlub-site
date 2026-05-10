@@ -7,12 +7,11 @@ import type { Post } from '@/data/posts';
 import styles from './BlogContent.module.css';
 
 const CATEGORIES = [
-  { label: 'Все', value: '' },
-  { label: 'Боль', value: 'боль' },
-  { label: 'Здоровье', value: 'здоровье' },
+  { label: 'Новые', value: '__new__' },
   { label: 'Бег', value: 'бег' },
-  { label: 'Стельки', value: 'стельки' },
   { label: 'Спорт', value: 'спорт' },
+  { label: 'Единоборства', value: 'единоборства' },
+  { label: 'Здоровье', value: 'здоровье' },
 ];
 
 function escapeRegex(s: string) {
@@ -53,10 +52,15 @@ export default function BlogContent({
   }, [posts]);
 
   const filtered = useMemo(() => {
-    let result = posts;
-    if (category) {
+    let result = [...posts];
+
+    if (category === '__new__') {
+      // Sort by date descending — newest first, no filtering
+      result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } else if (category) {
       result = result.filter((p) => p.category === category);
     }
+
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter((p) => {
@@ -117,7 +121,12 @@ export default function BlogContent({
 
       {filtered.length === 0 ? (
         <div className={styles.empty}>
-          <p>По запросу <strong>«{query || category}»</strong> ничего не найдено.</p>
+          <p>
+            {query
+              ? <>По запросу <strong>«{query}»</strong> ничего не найдено.</>
+              : <>В категории <strong>«{category}»</strong> статей пока нет.</>
+            }
+          </p>
         </div>
       ) : (
         <>

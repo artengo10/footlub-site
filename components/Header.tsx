@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import BurgerMenu from './BurgerMenu';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import LogoutConfirm from './LogoutConfirm';
 import styles from './Header.module.css';
 
 function SunIcon() {
@@ -43,6 +44,7 @@ function UserIcon() {
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
   const { theme, toggle } = useTheme();
   const { user, loading, logout } = useAuth();
   const router = useRouter();
@@ -52,6 +54,7 @@ export default function Header() {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+        setConfirmingLogout(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
@@ -60,6 +63,7 @@ export default function Header() {
 
   async function handleLogout() {
     setDropdownOpen(false);
+    setConfirmingLogout(false);
     await logout();
     router.push('/');
   }
@@ -104,11 +108,23 @@ export default function Header() {
                   </button>
                   {dropdownOpen && (
                     <div className={styles.dropdown}>
-                      <p className={styles.dropEmail}>{user.email}</p>
-                      <hr className={styles.dropDivider} />
-                      <button className={styles.dropItem} onClick={handleLogout}>
-                        Выйти
-                      </button>
+                      {confirmingLogout ? (
+                        <LogoutConfirm
+                          onConfirm={handleLogout}
+                          onCancel={() => setConfirmingLogout(false)}
+                        />
+                      ) : (
+                        <>
+                          <p className={styles.dropEmail}>{user.email}</p>
+                          <hr className={styles.dropDivider} />
+                          <Link href="/profile" className={styles.dropItem} onClick={() => setDropdownOpen(false)}>
+                            Профиль
+                          </Link>
+                          <button className={styles.dropItem} onClick={() => setConfirmingLogout(true)}>
+                            Выйти
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

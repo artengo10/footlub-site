@@ -104,6 +104,19 @@
   cursor: not-allowed;
 }
 
+.homeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  transition: color 0.15s;
+}
+
+.homeLink:hover { color: var(--accent); }
+
 .footer {
   margin-top: 24px;
   text-align: center;

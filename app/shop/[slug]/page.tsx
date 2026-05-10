@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { products } from '@/data/products';
+import BackToHome from '@/components/BackToHome';
 import styles from './product.module.css';
 
 export function generateStaticParams() {
@@ -45,7 +46,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <div className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       <div className="container">
-        <Link href="/shop" className={styles.back}>← Все стельки</Link>
+        <nav className={styles.breadcrumb}>
+          <BackToHome />
+          <span className={styles.breadcrumbSep}>/</span>
+          <Link href="/shop" className={styles.breadcrumbShop}>Магазин</Link>
+        </nav>
 
         <div className={styles.hero}>
           <div className={styles.heroLeft}>

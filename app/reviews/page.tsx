@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { reviews } from '@/data/reviews';
 import ReviewCard from '@/components/ReviewCard';
+import BackToHome from '@/components/BackToHome';
 import styles from './reviews.module.css';
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function ReviewsPage() {
   return (
     <section className={styles.section}>
       <div className="container">
+        <BackToHome />
         <h1 className={styles.title}>Отзывы</h1>
         <div className={styles.grid}>
           {reviews.map((r) => (

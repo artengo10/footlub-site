@@ -1,0 +1,49 @@
+.wrap {
+  padding: 14px 16px 12px;
+}
+
+.text {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.btns {
+  display: flex;
+  gap: 8px;
+}
+
+.cancel {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cancel:hover {
+  background: var(--border);
+}
+
+.confirm {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: var(--radius-sm);
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.confirm:hover {
+  opacity: 0.85;
+}

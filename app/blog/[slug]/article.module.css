@@ -7,15 +7,26 @@
   margin: 0 auto;
 }
 
-.back {
-  display: inline-block;
-  font-size: 14px;
-  color: var(--text-muted);
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 24px;
-  transition: color 0.2s;
 }
 
-.back:hover { color: var(--accent); }
+.breadcrumbLink {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.breadcrumbLink:hover { color: var(--accent); }
+
+.breadcrumbSep {
+  font-size: 13px;
+  color: var(--border);
+}
 
 .meta {
   display: flex;

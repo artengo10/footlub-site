@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { products } from '@/data/products';
+import BackToHome from '@/components/BackToHome';
 import styles from './shop.module.css';
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function ShopPage() {
   return (
     <section className={styles.section}>
       <div className="container">
+        <BackToHome />
         <h1 className={styles.title}>Магазин</h1>
         <p className={styles.sub}>
           Все стельки изготавливаются индивидуально после сканирования стопы в приложении FootLub.
