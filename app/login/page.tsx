@@ -1,39 +1,90 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './login.module.css';
 
-export const metadata: Metadata = {
-  title: 'Войти — FootLub',
-  robots: { index: false, follow: false },
-};
-
 export default function LoginPage() {
+  const router = useRouter();
+  const { refresh } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Ошибка входа');
+        return;
+      }
+      await refresh();
+      router.push('/');
+    } catch {
+      setError('Ошибка соединения. Попробуйте позже.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <section className={styles.wrap}>
+    <div className={styles.wrap}>
       <div className={styles.card}>
         <h1 className={styles.title}>Войти в FootLub</h1>
         <p className={styles.sub}>
-          Личный кабинет в разработке. Заказы оформляются через приложение FootLub для iPhone.
+          Отслеживайте заказы и управляйте данными сканирования стопы
         </p>
-        <form className={styles.form}>
-          <input
-            className={styles.input}
-            type="email"
-            placeholder="Email"
-            disabled
-            aria-label="Email"
-          />
-          <input
-            className={styles.input}
-            type="password"
-            placeholder="Пароль"
-            disabled
-            aria-label="Пароль"
-          />
-          <button className={styles.btn} disabled type="submit">
-            Войти
+
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.field}>
+            <label className={styles.label}>Email</label>
+            <input
+              className={styles.input}
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.label}>Пароль</label>
+            <input
+              className={styles.input}
+              type="password"
+              placeholder="••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          {error && <p className={styles.error}>{error}</p>}
+
+          <button className={styles.btn} type="submit" disabled={loading}>
+            {loading ? 'Входим...' : 'Войти'}
           </button>
         </form>
+
+        <div className={styles.footer}>
+          <Link href="/register" className={styles.link}>
+            Нет аккаунта? Зарегистрироваться →
+          </Link>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

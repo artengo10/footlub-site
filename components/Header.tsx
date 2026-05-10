@@ -1,8 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import BurgerMenu from './BurgerMenu';
 import { useTheme } from './ThemeProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './Header.module.css';
 
 function SunIcon() {
@@ -29,9 +31,38 @@ function MoonIcon() {
   );
 }
 
+function UserIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    </svg>
+  );
+}
+
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  async function handleLogout() {
+    setDropdownOpen(false);
+    await logout();
+    router.push('/');
+  }
 
   return (
     <>
@@ -60,12 +91,33 @@ export default function Header() {
             >
               {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
             </button>
-            <Link href="/login" className={styles.profile} aria-label="Личный кабинет">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              </svg>
-            </Link>
+
+            {!loading && (
+              user ? (
+                <div className={styles.avatarWrap} ref={dropdownRef}>
+                  <button
+                    className={styles.avatar}
+                    onClick={() => setDropdownOpen((v) => !v)}
+                    aria-label="Меню аккаунта"
+                  >
+                    {user.email[0].toUpperCase()}
+                  </button>
+                  {dropdownOpen && (
+                    <div className={styles.dropdown}>
+                      <p className={styles.dropEmail}>{user.email}</p>
+                      <hr className={styles.dropDivider} />
+                      <button className={styles.dropItem} onClick={handleLogout}>
+                        Выйти
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link href="/login" className={styles.profile} aria-label="Войти">
+                  <UserIcon />
+                </Link>
+              )
+            )}
           </div>
         </div>
       </header>

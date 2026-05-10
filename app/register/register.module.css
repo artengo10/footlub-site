@@ -72,6 +72,12 @@
   color: var(--text-muted);
 }
 
+.otpInput {
+  font-size: 22px;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
 .error {
   font-size: 13px;
   color: #ef4444;
@@ -106,15 +112,33 @@
 
 .footer {
   margin-top: 24px;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .link {
   font-size: 14px;
   color: var(--accent);
   font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
 }
 
 .link:hover {
   text-decoration: underline;
+}
+
+.back {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.cooldown {
+  font-size: 13px;
+  color: var(--text-muted);
 }
