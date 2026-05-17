@@ -1,0 +1,58 @@
+.page {
+  padding: 60px 0 80px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.container h1 {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #0D0D0D;
+}
+
+.date {
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 40px;
+}
+
+.container section {
+  margin-bottom: 32px;
+}
+
+.container h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #0D0D0D;
+}
+
+.container p {
+  color: #444;
+  line-height: 1.7;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.container ul {
+  color: #444;
+  line-height: 1.7;
+  font-size: 15px;
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+.container li {
+  margin-bottom: 6px;
+}
+
+.container a {
+  color: #0D0D0D;
+  text-decoration: underline;
+}
