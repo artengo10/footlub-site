@@ -17,7 +17,7 @@ export default function Hero() {
             Индивидуальная стелька,<br className={styles.br} />{' '}
             <span className={styles.accent}>созданная под вашу стопу</span>
           </h1>
-          <a href="#" className={styles.cta}>
+          <a href="https://apps.apple.com/app/id6770307442" target="_blank" rel="noopener noreferrer" className={styles.cta}>
             Скачать приложение
           </a>
         </div>
