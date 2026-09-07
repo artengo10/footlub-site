@@ -40,6 +40,37 @@
   gap: 4px;
 }
 
+.scanButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  margin-right: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.scanButton:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+  .scanButton span {
+    display: none;
+  }
+  .scanButton {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
 .themeToggle {
   display: flex;
   align-items: center;

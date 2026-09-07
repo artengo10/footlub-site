@@ -41,6 +41,20 @@ function UserIcon() {
   );
 }
 
+function ScanIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+      <path d="M12 8v8" />
+      <path d="M9 10v4" />
+      <path d="M15 10v4" />
+    </svg>
+  );
+}
+
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -88,6 +102,10 @@ export default function Header() {
             </Link>
           </div>
           <div className={styles.right}>
+            <Link href="/scan" className={styles.scanButton}>
+              <ScanIcon />
+              <span>Скан стопы</span>
+            </Link>
             <button
               className={styles.themeToggle}
               onClick={toggle}

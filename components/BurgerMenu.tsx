@@ -4,6 +4,7 @@ import Link from 'next/link';
 import styles from './BurgerMenu.module.css';
 
 const navLinks = [
+  { label: 'Скан стопы', desc: 'Сканирование через камеру телефона', href: '/scan' },
   { label: 'Магазин', desc: '3 типа стелек — от 3 000 ₽', href: '/shop' },
   { label: 'Блог', desc: 'Статьи о здоровье стоп', href: '/blog' },
   { label: 'Отзывы', desc: 'Покупатели о FootLub', href: '/reviews' },
