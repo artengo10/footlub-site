@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './scan.module.css';
+import { detectFootKeypoints, getCenterCropRect, type Keypoint } from '../../lib/footModel';
 
 type Phase = 'intro' | 'loading' | 'scanning' | 'error' | 'done';
 type AlignState = 'searching' | 'too-far' | 'too-close' | 'off-center' | 'aligned';
@@ -11,17 +12,27 @@ interface Step {
   instruction: string;
 }
 
+// Больше НЕ просим класть стопу на лист бумаги - модель находит стопу
+// напрямую по картинке, лист А4 был нужен только старому (отклонённому)
+// способу определения границ стопы по цвету фона.
 const STEPS: Step[] = [
-  { label: 'Сверху', instruction: 'Направь камеру на стопу сверху, стоя на полу' },
-  { label: 'Внешняя сторона', instruction: 'Поверни телефон и сними стопу с внешней стороны' },
+  { label: 'Сверху', instruction: 'Наведи камеру на стопу сверху' },
+  { label: 'Внешняя сторона', instruction: 'Сними стопу с внешней стороны' },
   { label: 'Внутренняя сторона', instruction: 'Теперь сними стопу с внутренней стороны' },
-  { label: 'Подошва', instruction: 'Приподними стопу и наведи камеру на подошву снизу' },
+  { label: 'Подошва', instruction: 'Приподними стопу и наведи камеру на подошву' },
 ];
 
 const HOLD_MS = 900;
-const MIN_AREA_RATIO = 0.08;
-const MAX_AREA_RATIO = 0.42;
-const CENTER_TOLERANCE = 0.16;
+// Пороги считаем по прямоугольнику, охватывающему все 8 найденных точек,
+// относительно квадратной области кадра, которую видит модель (см.
+// getCenterCropRect в lib/footModel.ts) - тот же принцип, что был у старой
+// детекции по листу бумаги (MIN/MAX_AREA_RATIO, CENTER_TOLERANCE), только
+// теперь по настоящим точкам стопы, а не по цветовому пятну.
+const MIN_AREA_RATIO = 0.05;
+const MAX_AREA_RATIO = 0.75;
+const CENTER_TOLERANCE = 0.22;
+const MIN_CONFIDENCE = 0.35; // ниже - считаем, что модель не уверена/не видит стопу
+const DEBUG = true;
 
 function speak(text: string) {
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -44,16 +55,21 @@ export default function ScanPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [alignState, setAlignState] = useState<AlignState>('searching');
   const [captures, setCaptures] = useState<string[]>([]);
+  const [debugInfo, setDebugInfo] = useState('');
+  const [modelReady, setModelReady] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const scratchCanvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const segmenterRef = useRef<any>(null);
   const rafRef = useRef<number | null>(null);
+  const inferBusyRef = useRef(false);
   const holdStartRef = useRef<number | null>(null);
   const lastSpokenStateRef = useRef<string>('');
   const stepIndexRef = useRef(0);
   const capturingRef = useRef(false);
+  const lastDebugUpdateRef = useRef(0);
 
   useEffect(() => {
     stepIndexRef.current = stepIndex;
@@ -63,14 +79,6 @@ export default function ScanPage() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    if (segmenterRef.current) {
-      try {
-        segmenterRef.current.close();
-      } catch {
-        /* noop */
-      }
-      segmenterRef.current = null;
-    }
   }, []);
 
   useEffect(() => stopCamera, [stopCamera]);
@@ -88,13 +96,45 @@ export default function ScanPage() {
     setCaptures((prev) => [...prev, dataUrl]);
   }
 
+  function drawOverlay(points: Keypoint[] | null, video: HTMLVideoElement) {
+    const canvas = overlayCanvasRef.current;
+    if (!canvas) return;
+    canvas.width = video.clientWidth;
+    canvas.height = video.clientHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!points) return;
+
+    // <video> на экране показан через CSS object-fit:cover - он МАСШТАБИРУЕТ
+    // и ОБРЕЗАЕТ реальный кадр под размер блока на странице. Если считать
+    // масштаб просто "ширина блока / ширина видео" (без учёта обрезки),
+    // точки съедут в сторону от настоящей стопы на экране. Здесь повторяем
+    // ту же математику, что и у object-fit:cover, чтобы точки легли ровно
+    // поверх реального изображения.
+    const scale = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+    const offsetX = (canvas.width - video.videoWidth * scale) / 2;
+    const offsetY = (canvas.height - video.videoHeight * scale) / 2;
+
+    for (const p of points) {
+      if (p.confidence < MIN_CONFIDENCE) continue;
+      ctx.beginPath();
+      ctx.arc(p.x * scale + offsetX, p.y * scale + offsetY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(80, 220, 140, 0.9)';
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
   function handleAlignResult(state: AlignState) {
     setAlignState(state);
 
     const spokenKey = `${stepIndexRef.current}:${state}`;
     if (state !== 'aligned' && lastSpokenStateRef.current !== spokenKey) {
       lastSpokenStateRef.current = spokenKey;
-      if (state === 'searching') speak('Не вижу стопу в кадре');
+      if (state === 'searching') speak('Не вижу стопу');
       else if (state === 'too-far') speak('Поднеси ближе');
       else if (state === 'too-close') speak('Отодвинь немного');
       else if (state === 'off-center') speak('Помести стопу по центру');
@@ -127,64 +167,77 @@ export default function ScanPage() {
     }
   }
 
+  function evaluateAlignment(points: Keypoint[], video: HTMLVideoElement): AlignState {
+    const good = points.filter((p) => p.confidence >= MIN_CONFIDENCE);
+    if (good.length < 6) return 'searching'; // модель уверенно нашла меньше 6 из 8 точек
+
+    const crop = getCenterCropRect(video.videoWidth, video.videoHeight);
+    const xs = good.map((p) => p.x);
+    const ys = good.map((p) => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+
+    const areaRatio = ((maxX - minX) * (maxY - minY)) / (crop.size * crop.size);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const cropCenterX = crop.x + crop.size / 2;
+    const cropCenterY = crop.y + crop.size / 2;
+    const offX = Math.abs(cx - cropCenterX) / crop.size;
+    const offY = Math.abs(cy - cropCenterY) / crop.size;
+
+    if (areaRatio < MIN_AREA_RATIO) return 'too-far';
+    if (areaRatio > MAX_AREA_RATIO) return 'too-close';
+    if (offX > CENTER_TOLERANCE || offY > CENTER_TOLERANCE) return 'off-center';
+    return 'aligned';
+  }
+
   async function detectionLoop() {
     const video = videoRef.current;
-    const segmenter = segmenterRef.current;
-    if (!video || !segmenter || video.readyState < 2) {
-      rafRef.current = requestAnimationFrame(detectionLoop);
+    const scratch = scratchCanvasRef.current;
+    if (!video || !scratch) {
+      rafRef.current = requestAnimationFrame(() => detectionLoop());
       return;
     }
 
-    try {
-      const result = segmenter.segmentForVideo(video, performance.now());
-      const mask = result.categoryMask;
-      if (mask) {
-        const width = mask.width;
-        const height = mask.height;
-        const data: Uint8Array = mask.getAsUint8Array();
+    if (!inferBusyRef.current) {
+      inferBusyRef.current = true;
+      try {
+        const points = await detectFootKeypoints(video, scratch);
+        drawOverlay(points, video);
 
-        let minX = width, maxX = 0, minY = height, maxY = 0, count = 0;
-        const step = 2; // sample every 2nd pixel for speed
-        for (let y = 0; y < height; y += step) {
-          for (let x = 0; x < width; x += step) {
-            if (data[y * width + x] > 0) {
-              count++;
-              if (x < minX) minX = x;
-              if (x > maxX) maxX = x;
-              if (y < minY) minY = y;
-              if (y > maxY) maxY = y;
-            }
+        if (points) {
+          const state = evaluateAlignment(points, video);
+          if (DEBUG && performance.now() - lastDebugUpdateRef.current > 250) {
+            lastDebugUpdateRef.current = performance.now();
+            const avgConf = points.reduce((s, p) => s + p.confidence, 0) / points.length;
+            setDebugInfo(`avg conf: ${avgConf.toFixed(2)}\nstate: ${state}`);
           }
-        }
-        mask.close();
-
-        const totalSampled = (width / step) * (height / step);
-        const areaRatio = count / totalSampled;
-
-        if (count < 20) {
-          handleAlignResult('searching');
+          handleAlignResult(state);
         } else {
-          const cx = (minX + maxX) / 2 / width;
-          const cy = (minY + maxY) / 2 / height;
-          const centered = Math.abs(cx - 0.5) < CENTER_TOLERANCE && Math.abs(cy - 0.5) < CENTER_TOLERANCE;
-
-          if (areaRatio < MIN_AREA_RATIO) handleAlignResult('too-far');
-          else if (areaRatio > MAX_AREA_RATIO) handleAlignResult('too-close');
-          else if (!centered) handleAlignResult('off-center');
-          else handleAlignResult('aligned');
+          handleAlignResult('searching');
         }
+      } catch (e) {
+        console.error('Ошибка распознавания:', e);
+      } finally {
+        inferBusyRef.current = false;
       }
-    } catch {
-      /* skip this frame */
     }
 
-    rafRef.current = requestAnimationFrame(detectionLoop);
+    rafRef.current = requestAnimationFrame(() => detectionLoop());
   }
 
   async function startScan() {
     setErrorMsg('');
     setPhase('loading');
     try {
+      // Модель (~несколько МБ) грузится и разогревается заранее, чтобы не
+      // тормозить первый кадр съёмки.
+      await detectFootKeypoints(
+        document.createElement('video'),
+        scratchCanvasRef.current ?? document.createElement('canvas')
+      ).catch(() => null);
+      setModelReady(true);
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 1280 } },
         audio: false,
@@ -195,32 +248,14 @@ export default function ScanPage() {
         await videoRef.current.play();
       }
 
-      const { FilesetResolver, ImageSegmenter } = await import('@mediapipe/tasks-vision');
-      const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
-      );
-      const segmenter = await ImageSegmenter.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath:
-            'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-        outputCategoryMask: true,
-        outputConfidenceMasks: false,
-      });
-      segmenterRef.current = segmenter;
-
       setStepIndex(0);
       setPhase('scanning');
       speak(STEPS[0].instruction);
-      rafRef.current = requestAnimationFrame(detectionLoop);
+      rafRef.current = requestAnimationFrame(() => detectionLoop());
     } catch (err) {
       console.error(err);
       stopCamera();
-      setErrorMsg(
-        'Не удалось включить камеру или загрузить модуль распознавания. Проверь разрешение на камеру в браузере и подключение к интернету.'
-      );
+      setErrorMsg('Не удалось включить камеру или загрузить модель. Проверь разрешение на камеру в браузере.');
       setPhase('error');
     }
   }
@@ -236,12 +271,33 @@ export default function ScanPage() {
 
   return (
     <div className={styles.page}>
+      <div className={`${styles.stage} ${phase !== 'scanning' ? styles.stageHidden : ''}`}>
+        <video ref={videoRef} className={styles.video} muted playsInline />
+        <canvas ref={overlayCanvasRef} className={styles.overlayCanvas} />
+        {phase === 'scanning' && (
+          <>
+            <div className={styles.overlay}>
+              <div
+                className={`${styles.targetBox} ${alignState === 'aligned' ? styles.targetBoxAligned : ''}`}
+              />
+            </div>
+            <div className={styles.statusBar}>
+              <div className={styles.statusText}>
+                Шаг {stepIndex + 1}/{STEPS.length}: {STEPS[stepIndex].label}
+              </div>
+            </div>
+            {DEBUG && <div className={styles.debug}>{debugInfo}</div>}
+          </>
+        )}
+      </div>
+
       {phase === 'intro' && (
         <div className={styles.intro}>
           <h1>Скан стопы</h1>
           <p>
-            Понадобится камера телефона. Мы будем подсказывать голосом и вибрацией, как
-            держать стопу — снимем 4 ракурса подряд.
+            Понадобится только камера телефона — лист бумаги не нужен. Модель сама находит
+            стопу на видео и подсказывает голосом и вибрацией, как её держать — снимем 4 ракурса
+            подряд.
           </p>
           <button className={styles.startButton} onClick={startScan}>
             Начать скан
@@ -252,7 +308,7 @@ export default function ScanPage() {
       {phase === 'loading' && (
         <div className={styles.intro}>
           <h1>Загрузка…</h1>
-          <p>Включаем камеру и готовим распознавание.</p>
+          <p>{modelReady ? 'Включаем камеру.' : 'Загружаем модель распознавания стопы.'}</p>
         </div>
       )}
 
@@ -263,22 +319,6 @@ export default function ScanPage() {
           <button className={styles.startButton} onClick={startScan}>
             Попробовать снова
           </button>
-        </div>
-      )}
-
-      {phase === 'scanning' && (
-        <div className={styles.stage}>
-          <video ref={videoRef} className={styles.video} muted playsInline />
-          <div className={styles.overlay}>
-            <div
-              className={`${styles.targetBox} ${alignState === 'aligned' ? styles.targetBoxAligned : ''}`}
-            />
-          </div>
-          <div className={styles.statusBar}>
-            <div className={styles.statusText}>
-              Шаг {stepIndex + 1}/{STEPS.length}: {STEPS[stepIndex].label}
-            </div>
-          </div>
         </div>
       )}
 
@@ -304,6 +344,7 @@ export default function ScanPage() {
       )}
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <canvas ref={scratchCanvasRef} style={{ display: 'none' }} />
     </div>
   );
 }
