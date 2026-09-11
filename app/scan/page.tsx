@@ -214,10 +214,18 @@ export default function ScanPage() {
           }
           handleAlignResult(state);
         } else {
+          if (DEBUG && performance.now() - lastDebugUpdateRef.current > 250) {
+            lastDebugUpdateRef.current = performance.now();
+            setDebugInfo(`points: null\nvideo ready: ${video.readyState}, ${video.videoWidth}x${video.videoHeight}`);
+          }
           handleAlignResult('searching');
         }
       } catch (e) {
         console.error('Ошибка распознавания:', e);
+        // На телефоне консоль браузера не видна - показываем ошибку прямо
+        // поверх видео, чтобы можно было сфотографировать и прислать текст.
+        const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+        setDebugInfo(`ОШИБКА:\n${msg}`);
       } finally {
         inferBusyRef.current = false;
       }
