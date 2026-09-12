@@ -38,7 +38,16 @@ let sessionPromise: Promise<ort.InferenceSession> | null = null;
 
 export function loadFootModel(): Promise<ort.InferenceSession> {
   if (!sessionPromise) {
-    ort.env.wasm.wasmPaths = '/ort/';
+    // Файлы движка (.wasm/.mjs) грузим с CDN (jsdelivr), а не со своего
+    // сервера - так официально советует сама документация ONNX Runtime
+    // Web. На своём сервере (self-host) в Safari на iPhone эти файлы
+    // падали с невнятной ошибкой "Importing a module script failed" -
+    // похоже на особенность того, как Safari подгружает JS-модули с
+    // нашего нового поддомена/пути. CDN уже проверен тысячами проектов
+    // и отдаёт правильные заголовки (включая CORS), поэтому надёжнее.
+    // Версия закреплена (1.29.0), чтобы CDN не подсунул другую версию,
+    // несовместимую с той, что стоит у нас в package.json.
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/';
     // Многопоточный WASM требует специальных HTTP-заголовков сервера
     // (Cross-Origin-Opener-Policy/Cross-Origin-Embedder-Policy), которых
     // на сайте нет - без них SharedArrayBuffer недоступен и всё тихо
