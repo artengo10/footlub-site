@@ -22,6 +22,20 @@ const STEPS: Step[] = [
   { label: 'Подошва', instruction: 'Приподними стопу и наведи камеру на подошву' },
 ];
 
+// Индексы точек (см. KEYPOINT_NAMES в lib/footModel.ts: big_toe=0, toe_2=1,
+// toe_3=2, toe_4=3, little_toe=4, heel=5, outer_edge=6, inner_edge=7), которые
+// реально видно на КАЖДОМ конкретном ракурсе - на боковых фото стопы видно
+// не все 8 точек, а только те, что смотрят на камеру. Проверяем и рисуем
+// только их, а не все 8 подряд - иначе для невидимых на этом ракурсе точек
+// модель выдаёт шумные, случайно блуждающие координаты (её этому не учили),
+// и они мешают и визуально, и при проверке "встал ли ты правильно".
+const STEP_KEYPOINTS: number[][] = [
+  [0, 1, 2, 3, 4, 6, 7], // Сверху - все, кроме пятки (её не видно сверху)
+  [4, 5, 6],             // Внешняя сторона - мизинец, пятка, внешний край
+  [0, 5, 7],             // Внутренняя сторона - большой палец, пятка, внутренний край (свод)
+  [0, 1, 2, 3, 4, 5, 6, 7], // Подошва - видно всё
+];
+
 const HOLD_MS = 900;
 const STEP_COOLDOWN_MS = 2500; // время на разворот стопы после смены шага
 // Пороги считаем по прямоугольнику, охватывающему все 8 найденных точек,
@@ -152,8 +166,13 @@ export default function ScanPage() {
 
     if (!points) return;
 
-    for (const p of points) {
-      if (p.confidence < MIN_CONFIDENCE) continue;
+    // Рисуем только точки, которые реально должны быть видны на ТЕКУЩЕМ
+    // ракурсе (см. STEP_KEYPOINTS) - для остальных модель не обучена и может
+    // выдать случайно блуждающую координату, показывать её только запутывает.
+    const expected = STEP_KEYPOINTS[stepIndexRef.current];
+    for (const i of expected) {
+      const p = points[i];
+      if (!p || p.confidence < MIN_CONFIDENCE) continue;
       ctx.beginPath();
       ctx.arc(p.x * scale + offsetX, p.y * scale + offsetY, 6, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(80, 220, 140, 0.9)';
@@ -206,9 +225,14 @@ export default function ScanPage() {
     }
   }
 
-  function evaluateAlignment(points: Keypoint[], video: HTMLVideoElement): AlignState {
-    const good = points.filter((p) => p.confidence >= MIN_CONFIDENCE);
-    if (good.length < 6) return 'searching'; // модель уверенно нашла меньше 6 из 8 точек
+  function evaluateAlignment(points: Keypoint[], video: HTMLVideoElement, expected: number[]): AlignState {
+    // Смотрим только на точки, ожидаемые для ЭТОГО ракурса (см. STEP_KEYPOINTS) -
+    // например, сбоку пятку/большой палец видно, а мизинец нет, и требовать
+    // его уверенного обнаружения бессмысленно - там физически другая нога.
+    const relevant = expected.map((i) => points[i]).filter(Boolean);
+    const good = relevant.filter((p) => p.confidence >= MIN_CONFIDENCE);
+    const minGood = Math.max(2, expected.length - 1); // допускаем максимум 1 промах
+    if (good.length < minGood) return 'searching';
 
     const crop = getCenterCropRect(video.videoWidth, video.videoHeight);
     const xs = good.map((p) => p.x);
@@ -255,10 +279,11 @@ export default function ScanPage() {
         drawOverlay(points, video);
 
         if (points) {
-          const state = evaluateAlignment(points, video);
+          const state = evaluateAlignment(points, video, STEP_KEYPOINTS[stepIndexRef.current]);
           if (DEBUG && performance.now() - lastDebugUpdateRef.current > 250) {
             lastDebugUpdateRef.current = performance.now();
-            const avgConf = points.reduce((s, p) => s + p.confidence, 0) / points.length;
+            const expected = STEP_KEYPOINTS[stepIndexRef.current];
+            const avgConf = expected.reduce((s, i) => s + points[i].confidence, 0) / expected.length;
             setDebugInfo(`avg conf: ${avgConf.toFixed(2)}\nstate: ${state}`);
           }
           handleAlignResult(state);
