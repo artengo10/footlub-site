@@ -72,6 +72,13 @@ export default function ScanPage() {
   const [captures, setCaptures] = useState<string[]>([]);
   const [debugInfo, setDebugInfo] = useState('');
   const [modelReady, setModelReady] = useState(false);
+  // 'environment' - задняя камера (удобна для вида сверху), 'user' - фронтальная
+  // (её удобнее использовать, положив телефон на пол экраном вверх, для боковых
+  // ракурсов и подошвы - см. переписку). Зеркалим ТОЛЬКО картинку на экране
+  // (CSS) для привычного вида - на то, что видит модель, это не влияет:
+  // canvas.drawImage(video) всегда берёт сырой, незеркальный кадр из видео,
+  // CSS-трансформации на это никак не действуют (проверено по документации).
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -115,6 +122,31 @@ export default function ScanPage() {
   }, []);
 
   useEffect(() => stopCamera, [stopCamera]);
+
+  // Открывает камеру с указанной стороны (не трогая цикл распознавания -
+  // он продолжает читать videoRef.current, ему всё равно, откуда взялся поток).
+  async function openCamera(mode: 'environment' | 'user') {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 1280 } },
+      audio: false,
+    });
+    streamRef.current = stream;
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+    }
+  }
+
+  async function switchCamera() {
+    const next = facingMode === 'environment' ? 'user' : 'environment';
+    try {
+      await openCamera(next);
+      setFacingMode(next);
+    } catch (err) {
+      console.error('Не удалось переключить камеру:', err);
+    }
+  }
 
   function captureFrame() {
     const video = videoRef.current;
@@ -320,15 +352,7 @@ export default function ScanPage() {
       ).catch(() => null);
       setModelReady(true);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 1280 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      await openCamera(facingMode);
 
       setStepIndex(0);
       setPhase('scanning');
@@ -362,10 +386,24 @@ export default function ScanPage() {
   return (
     <div className={styles.page}>
       <div className={`${styles.stage} ${phase !== 'scanning' ? styles.stageHidden : ''}`}>
-        <video ref={videoRef} className={styles.video} muted playsInline />
+        <video
+          ref={videoRef}
+          className={styles.video}
+          style={facingMode === 'user' ? { transform: 'scaleX(-1)' } : undefined}
+          muted
+          playsInline
+        />
         <canvas ref={overlayCanvasRef} className={styles.overlayCanvas} />
         {phase === 'scanning' && (
           <>
+            <button
+              type="button"
+              className={styles.switchCameraButton}
+              onClick={switchCamera}
+              aria-label="Переключить камеру"
+            >
+              ⟲
+            </button>
             <div className={styles.statusBar}>
               <div className={styles.statusText}>
                 Шаг {stepIndex + 1}/{STEPS.length}: {STEPS[stepIndex].label}
