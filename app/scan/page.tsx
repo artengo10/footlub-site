@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './scan.module.css';
-import { detectFootKeypoints, getCenterCropRect, type Keypoint } from '../../lib/footModel';
+import { detectFootKeypoints, getCenterCropRect, OneEuroFilter, type Keypoint } from '../../lib/footModel';
 
 type Phase = 'intro' | 'loading' | 'scanning' | 'error' | 'done';
 type AlignState = 'searching' | 'too-far' | 'too-close' | 'off-center' | 'aligned';
@@ -53,7 +53,7 @@ export default function ScanPage() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [errorMsg, setErrorMsg] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
-  const [alignState, setAlignState] = useState<AlignState>('searching');
+  const [, setAlignState] = useState<AlignState>('searching');
   const [captures, setCaptures] = useState<string[]>([]);
   const [debugInfo, setDebugInfo] = useState('');
   const [modelReady, setModelReady] = useState(false);
@@ -70,6 +70,19 @@ export default function ScanPage() {
   const stepIndexRef = useRef(0);
   const capturingRef = useRef(false);
   const lastDebugUpdateRef = useRef(0);
+  // По одному фильтру на x и на y каждой из 8 точек - убирает дрожание между
+  // кадрами (см. OneEuroFilter в lib/footModel.ts). minCutoff/beta подобраны
+  // для этого случая: стопа обычно лежит неподвижно, руки чуть подрагивают -
+  // нужно сильное сглаживание в покое (низкий minCutoff), но без задержки,
+  // если реально двигаешь камеру (beta даёт отклик на скорость движения).
+  const smoothersRef = useRef<{ x: OneEuroFilter; y: OneEuroFilter }[]>(
+    Array.from({ length: 8 }, () => ({
+      x: new OneEuroFilter(0.8, 0.4, 1.0),
+      y: new OneEuroFilter(0.8, 0.4, 1.0),
+    }))
+  );
+
+  const alignStateRef = useRef<AlignState>('searching');
 
   useEffect(() => {
     stepIndexRef.current = stepIndex;
@@ -104,7 +117,6 @@ export default function ScanPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!points) return;
 
     // <video> на экране показан через CSS object-fit:cover - он МАСШТАБИРУЕТ
     // и ОБРЕЗАЕТ реальный кадр под размер блока на странице. Если считать
@@ -115,6 +127,24 @@ export default function ScanPage() {
     const scale = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
     const offsetX = (canvas.width - video.videoWidth * scale) / 2;
     const offsetY = (canvas.height - video.videoHeight * scale) / 2;
+
+    // Настоящая зона, которую анализирует модель - квадрат по центру КАДРА
+    // (см. getCenterCropRect), а не декоративный прямоугольник, что был тут
+    // раньше и не совпадал с реальной зоной анализа (точки могли "вылезать"
+    // за его пределы, хотя оставались внутри настоящей зоны). Рисуем её
+    // здесь же, той же математикой, что и точки - гарантированно совпадает.
+    const crop = getCenterCropRect(video.videoWidth, video.videoHeight);
+    ctx.strokeStyle =
+      alignStateRef.current === 'aligned' ? 'rgba(61, 220, 132, 0.9)' : 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(
+      crop.x * scale + offsetX,
+      crop.y * scale + offsetY,
+      crop.size * scale,
+      crop.size * scale
+    );
+
+    if (!points) return;
 
     for (const p of points) {
       if (p.confidence < MIN_CONFIDENCE) continue;
@@ -130,6 +160,7 @@ export default function ScanPage() {
 
   function handleAlignResult(state: AlignState) {
     setAlignState(state);
+    alignStateRef.current = state;
 
     const spokenKey = `${stepIndexRef.current}:${state}`;
     if (state !== 'aligned' && lastSpokenStateRef.current !== spokenKey) {
@@ -202,7 +233,17 @@ export default function ScanPage() {
     if (!inferBusyRef.current) {
       inferBusyRef.current = true;
       try {
-        const points = await detectFootKeypoints(video, scratch);
+        const raw = await detectFootKeypoints(video, scratch);
+        // Сглаживаем координаты каждой точки по времени (см. OneEuroFilter) -
+        // сама уверенность (confidence) не сглаживаем, она и так используется
+        // только для порога "видно/не видно".
+        const now = performance.now();
+        const points = raw
+          ? raw.map((p, i) => {
+              const s = smoothersRef.current[i];
+              return { x: s.x.filter(now, p.x), y: s.y.filter(now, p.y), confidence: p.confidence };
+            })
+          : null;
         drawOverlay(points, video);
 
         if (points) {
@@ -273,6 +314,13 @@ export default function ScanPage() {
       lastSpokenStateRef.current = '';
       holdStartRef.current = null;
       capturingRef.current = false;
+      // Новый шаг - новый ракурс стопы, сглаживать "переезд" от старой
+      // позиции точек к новой не нужно (иначе точки будут неправильно
+      // "ехать" по экрану первые пару кадров нового шага).
+      smoothersRef.current = Array.from({ length: 8 }, () => ({
+        x: new OneEuroFilter(0.8, 0.4, 1.0),
+        y: new OneEuroFilter(0.8, 0.4, 1.0),
+      }));
       speak(STEPS[stepIndex].instruction);
     }
   }, [stepIndex, phase]);
@@ -284,11 +332,6 @@ export default function ScanPage() {
         <canvas ref={overlayCanvasRef} className={styles.overlayCanvas} />
         {phase === 'scanning' && (
           <>
-            <div className={styles.overlay}>
-              <div
-                className={`${styles.targetBox} ${alignState === 'aligned' ? styles.targetBoxAligned : ''}`}
-              />
-            </div>
             <div className={styles.statusBar}>
               <div className={styles.statusText}>
                 Шаг {stepIndex + 1}/{STEPS.length}: {STEPS[stepIndex].label}

@@ -26,6 +26,55 @@ export interface Keypoint {
   confidence: number; // 0..1, чем выше - тем увереннее модель
 }
 
+// One Euro Filter - стандартный, проверенный способ убрать дрожание точек
+// между кадрами живого видео (тот же принцип используют Face ID, AR-фильтры
+// и т.д.): когда точка стоит на месте - сильно сглаживает (убирает дрожь),
+// когда реально двигается - почти не тормозит (не даёт заметной задержки).
+// https://cristal.univ-lille.fr/~casiez/1euro/ (оригинальная статья/алгоритм)
+class LowPassFilter {
+  private y: number | null = null;
+  filter(x: number): number {
+    this.y = this.y === null ? x : this.y;
+    return this.y;
+  }
+  filterWithAlpha(x: number, alpha: number): number {
+    this.y = this.y === null ? x : alpha * x + (1 - alpha) * this.y;
+    return this.y;
+  }
+}
+
+export class OneEuroFilter {
+  private xFilter = new LowPassFilter();
+  private dxFilter = new LowPassFilter();
+  private lastTime: number | null = null;
+
+  constructor(
+    private minCutoff = 1.0,
+    private beta = 0.3,
+    private dCutoff = 1.0
+  ) {}
+
+  private alpha(cutoff: number, dt: number): number {
+    const tau = 1 / (2 * Math.PI * cutoff);
+    return 1 / (1 + tau / dt);
+  }
+
+  filter(t: number, x: number): number {
+    if (this.lastTime === null) {
+      this.lastTime = t;
+      return this.xFilter.filter(x);
+    }
+    const dt = Math.max((t - this.lastTime) / 1000, 1 / 120); // секунды, не даём dt=0
+    this.lastTime = t;
+
+    const prevX = this.xFilter.filter(x); // текущее сглаженное значение (до обновления)
+    const dx = (x - prevX) / dt;
+    const edx = this.dxFilter.filterWithAlpha(dx, this.alpha(this.dCutoff, dt));
+    const cutoff = this.minCutoff + this.beta * Math.abs(edx);
+    return this.xFilter.filterWithAlpha(x, this.alpha(cutoff, dt));
+  }
+}
+
 export interface CropRect {
   // квадратная область кадра, которую мы вырезаем и скармливаем модели -
   // нужно для перевода координат точек обратно в пиксели видео
