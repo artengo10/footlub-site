@@ -23,6 +23,7 @@ const STEPS: Step[] = [
 ];
 
 const HOLD_MS = 900;
+const STEP_COOLDOWN_MS = 2500; // время на разворот стопы после смены шага
 // Пороги считаем по прямоугольнику, охватывающему все 8 найденных точек,
 // относительно квадратной области кадра, которую видит модель (см.
 // getCenterCropRect в lib/footModel.ts) - тот же принцип, что был у старой
@@ -83,6 +84,11 @@ export default function ScanPage() {
   );
 
   const alignStateRef = useRef<AlignState>('searching');
+  // Момент последней смены шага - сразу после неё нога ещё стоит в СТАРОМ
+  // положении (уже "выровнена" под старый ракурс), поэтому таймер удержания
+  // не должен запускаться первые STEP_COOLDOWN_MS - иначе снимок сделается
+  // почти мгновенно, раньше, чем успеешь повернуть стопу под новый ракурс.
+  const stepChangeTimeRef = useRef(0);
 
   useEffect(() => {
     stepIndexRef.current = stepIndex;
@@ -171,7 +177,9 @@ export default function ScanPage() {
       else if (state === 'off-center') speak('Помести стопу по центру');
     }
 
-    if (state === 'aligned') {
+    const cooldownActive = performance.now() - stepChangeTimeRef.current < STEP_COOLDOWN_MS;
+
+    if (state === 'aligned' && !cooldownActive) {
       if (holdStartRef.current === null) {
         holdStartRef.current = performance.now();
         vibrate(60);
@@ -314,6 +322,7 @@ export default function ScanPage() {
       lastSpokenStateRef.current = '';
       holdStartRef.current = null;
       capturingRef.current = false;
+      stepChangeTimeRef.current = performance.now();
       // Новый шаг - новый ракурс стопы, сглаживать "переезд" от старой
       // позиции точек к новой не нужно (иначе точки будут неправильно
       // "ехать" по экрану первые пару кадров нового шага).
