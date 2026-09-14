@@ -4,12 +4,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './scan.module.css';
 import { detectFootKeypoints, getCenterCropRect, OneEuroFilter, type Keypoint } from '../../lib/footModel';
 
-type Phase = 'intro' | 'loading' | 'scanning' | 'error' | 'done';
+type Phase = 'intro' | 'loading' | 'scanning' | 'foot-switch' | 'error' | 'done';
 type AlignState = 'searching' | 'too-far' | 'too-close' | 'off-center' | 'aligned';
+type FootSide = 'right' | 'left';
 
 interface Step {
   label: string;
   instruction: string;
+}
+
+interface Capture {
+  side: FootSide;
+  label: string;
+  dataUrl: string;
 }
 
 // Больше НЕ просим класть стопу на лист бумаги - модель находит стопу
@@ -69,7 +76,12 @@ export default function ScanPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [stepIndex, setStepIndex] = useState(0);
   const [, setAlignState] = useState<AlignState>('searching');
-  const [captures, setCaptures] = useState<string[]>([]);
+  // Сканируем ОБЕ стопы по очереди (4 ракурса на правую, потом 4 на левую) -
+  // для стельки нужна пара, не одна стопа. Модель сама точки искать умеет
+  // на любой стопе (синтетика при обучении включала обе) - тут просто
+  // порядок съёмки на уровне сайта, сама модель про "лево/право" не знает.
+  const [footSide, setFootSide] = useState<FootSide>('right');
+  const [captures, setCaptures] = useState<Capture[]>([]);
   const [debugInfo, setDebugInfo] = useState('');
   const [modelReady, setModelReady] = useState(false);
   // 'environment' - задняя камера (удобна для вида сверху), 'user' - фронтальная
@@ -110,10 +122,23 @@ export default function ScanPage() {
   // не должен запускаться первые STEP_COOLDOWN_MS - иначе снимок сделается
   // почти мгновенно, раньше, чем успеешь повернуть стопу под новый ракурс.
   const stepChangeTimeRef = useRef(0);
+  const footSideRef = useRef<FootSide>('right');
+  // Нужен, чтобы цикл распознавания (detectionLoop) не пытался авто-снимать
+  // кадр, пока показан промежуточный экран "переложи на левую стопу" -
+  // сам цикл работает непрерывно (камеру между стопами не выключаем).
+  const phaseRef = useRef<Phase>('intro');
 
   useEffect(() => {
     stepIndexRef.current = stepIndex;
   }, [stepIndex]);
+
+  useEffect(() => {
+    footSideRef.current = footSide;
+  }, [footSide]);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -158,7 +183,10 @@ export default function ScanPage() {
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-    setCaptures((prev) => [...prev, dataUrl]);
+    setCaptures((prev) => [
+      ...prev,
+      { side: footSideRef.current, label: STEPS[stepIndexRef.current].label, dataUrl },
+    ]);
   }
 
   function drawOverlay(points: Keypoint[] | null, video: HTMLVideoElement) {
@@ -242,8 +270,14 @@ export default function ScanPage() {
         window.setTimeout(() => {
           const next = stepIndexRef.current + 1;
           if (next >= STEPS.length) {
-            stopCamera();
-            setPhase('done');
+            if (footSideRef.current === 'right') {
+              // Правая стопа готова - не выключаем камеру, переходим к левой.
+              speak('Отлично, правая стопа готова. Теперь левая стопа');
+              setPhase('foot-switch');
+            } else {
+              stopCamera();
+              setPhase('done');
+            }
           } else {
             setStepIndex(next);
             lastSpokenStateRef.current = '';
@@ -294,7 +328,7 @@ export default function ScanPage() {
       return;
     }
 
-    if (!inferBusyRef.current) {
+    if (!inferBusyRef.current && phaseRef.current === 'scanning') {
       inferBusyRef.current = true;
       try {
         const raw = await detectFootKeypoints(video, scratch);
@@ -340,9 +374,18 @@ export default function ScanPage() {
     rafRef.current = requestAnimationFrame(() => detectionLoop());
   }
 
+  function continueToLeftFoot() {
+    setFootSide('left');
+    footSideRef.current = 'left';
+    setStepIndex(0);
+    setPhase('scanning');
+  }
+
   async function startScan() {
     setErrorMsg('');
     setPhase('loading');
+    setFootSide('right');
+    footSideRef.current = 'right';
     try {
       // Модель (~несколько МБ) грузится и разогревается заранее, чтобы не
       // тормозить первый кадр съёмки.
@@ -379,9 +422,12 @@ export default function ScanPage() {
         x: new OneEuroFilter(0.8, 0.4, 1.0),
         y: new OneEuroFilter(0.8, 0.4, 1.0),
       }));
-      speak(STEPS[stepIndex].instruction);
+      // На первом шаге новой стопы (stepIndex===0) уточняем голосом, какая
+      // именно стопа сейчас снимается - дальше по шагам это и так понятно.
+      const prefix = stepIndex === 0 ? (footSide === 'right' ? 'Правая стопа. ' : 'Левая стопа. ') : '';
+      speak(prefix + STEPS[stepIndex].instruction);
     }
-  }, [stepIndex, phase]);
+  }, [stepIndex, phase, footSide]);
 
   return (
     <div className={styles.page}>
@@ -422,11 +468,21 @@ export default function ScanPage() {
           <h1>Скан стопы</h1>
           <p>
             Понадобится только камера телефона — лист бумаги не нужен. Модель сама находит
-            стопу на видео и подсказывает голосом и вибрацией, как её держать — снимем 4 ракурса
-            подряд.
+            стопу на видео и подсказывает голосом и вибрацией, как её держать — снимем по 4 ракурса
+            с каждой стопы (сначала правая, потом левая), 8 фото всего.
           </p>
           <button className={styles.startButton} onClick={startScan}>
             Начать скан
+          </button>
+        </div>
+      )}
+
+      {phase === 'foot-switch' && (
+        <div className={styles.intro}>
+          <h1>Правая стопа готова!</h1>
+          <p>Теперь переложи камеру (или стопу) и отсканируем левую стопу — те же 4 ракурса.</p>
+          <button className={styles.startButton} onClick={continueToLeftFoot}>
+            Сканировать левую стопу
           </button>
         </div>
       )}
@@ -451,11 +507,22 @@ export default function ScanPage() {
       {phase === 'done' && (
         <div className={styles.captured}>
           <h1>Готово!</h1>
-          <p>Все 4 ракурса сняты.</p>
+          <p>Обе стопы сняты — по 4 ракурса на каждую.</p>
+          <h2 className={styles.thumbGroupTitle}>Правая стопа</h2>
           <div className={styles.thumbGrid}>
-            {captures.map((src, i) => (
-              <img key={i} src={src} className={styles.thumb} alt={STEPS[i]?.label ?? ''} />
-            ))}
+            {captures
+              .filter((c) => c.side === 'right')
+              .map((c, i) => (
+                <img key={i} src={c.dataUrl} className={styles.thumb} alt={c.label} />
+              ))}
+          </div>
+          <h2 className={styles.thumbGroupTitle}>Левая стопа</h2>
+          <div className={styles.thumbGrid}>
+            {captures
+              .filter((c) => c.side === 'left')
+              .map((c, i) => (
+                <img key={i} src={c.dataUrl} className={styles.thumb} alt={c.label} />
+              ))}
           </div>
           <button
             className={styles.startButton}
