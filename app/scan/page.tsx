@@ -396,14 +396,17 @@ export default function ScanPage() {
         <canvas ref={overlayCanvasRef} className={styles.overlayCanvas} />
         {phase === 'scanning' && (
           <>
-            <button
-              type="button"
-              className={styles.switchCameraButton}
-              onClick={switchCamera}
-              aria-label="Переключить камеру"
-            >
-              ⟲
-            </button>
+            <div className={styles.switchCameraGroup}>
+              <button
+                type="button"
+                className={styles.switchCameraButton}
+                onClick={switchCamera}
+                aria-label="Переключить камеру"
+              >
+                ⟲
+              </button>
+              <span className={styles.switchCameraHint}>Переверните камеру для удобства</span>
+            </div>
             <div className={styles.statusBar}>
               <div className={styles.statusText}>
                 Шаг {stepIndex + 1}/{STEPS.length}: {STEPS[stepIndex].label}
