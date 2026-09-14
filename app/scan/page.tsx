@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './scan.module.css';
 import { detectFootKeypoints, getCenterCropRect, OneEuroFilter, type Keypoint } from '../../lib/footModel';
 
-type Phase = 'intro' | 'loading' | 'scanning' | 'foot-switch' | 'error' | 'done';
+type Phase = 'intro' | 'loading' | 'scanning' | 'step-transition' | 'error' | 'done';
 type AlignState = 'searching' | 'too-far' | 'too-close' | 'off-center' | 'aligned';
 type FootSide = 'right' | 'left';
 
@@ -53,7 +53,13 @@ const STEP_COOLDOWN_MS = 2500; // время на разворот стопы п
 const MIN_AREA_RATIO = 0.05;
 const MAX_AREA_RATIO = 0.75;
 const CENTER_TOLERANCE = 0.22;
-const MIN_CONFIDENCE = 0.35; // ниже - считаем, что модель не уверена/не видит стопу
+const MIN_CONFIDENCE = 0.45; // ниже - считаем, что модель не уверена/не видит стопу
+// Модель никогда не видела "не стопу" (лицо, руку) - она всегда выдаёт 8 точек
+// и какую-то уверенность, даже для случайного объекта в кадре. Настоящая стопа
+// (сверху/снизу/сбоку) всегда заметно ВЫТЯНУТАЯ (длина намного больше ширины) -
+// у лица или ладони пропорции точек ближе к квадрату. Это не идеальная защита
+// (не полноценное распознавание "это стопа"), но отсекает случайные срабатывания.
+const MIN_ASPECT_RATIO = 1.3;
 const DEBUG = true;
 
 function speak(text: string) {
@@ -82,6 +88,10 @@ export default function ScanPage() {
   // порядок съёмки на уровне сайта, сама модель про "лево/право" не знает.
   const [footSide, setFootSide] = useState<FootSide>('right');
   const [captures, setCaptures] = useState<Capture[]>([]);
+  // Что снимать ПОСЛЕ того, как пользователь нажмёт "Готов, снимаем" на
+  // чёрном экране-паузе между кадрами (см. phase 'step-transition') - пока
+  // не нажал, цикл распознавания не работает вообще, автосъёмки нет.
+  const [nextStepInfo, setNextStepInfo] = useState<{ side: FootSide; index: number } | null>(null);
   const [debugInfo, setDebugInfo] = useState('');
   const [modelReady, setModelReady] = useState(false);
   // 'environment' - задняя камера (удобна для вида сверху), 'user' - фронтальная
@@ -272,17 +282,19 @@ export default function ScanPage() {
           if (next >= STEPS.length) {
             if (footSideRef.current === 'right') {
               // Правая стопа готова - не выключаем камеру, переходим к левой.
-              speak('Отлично, правая стопа готова. Теперь левая стопа');
-              setPhase('foot-switch');
+              setNextStepInfo({ side: 'left', index: 0 });
+              setPhase('step-transition');
             } else {
               stopCamera();
               setPhase('done');
             }
           } else {
-            setStepIndex(next);
-            lastSpokenStateRef.current = '';
-            holdStartRef.current = null;
-            capturingRef.current = false;
+            // Не идём на следующий шаг сразу - показываем чёрный экран-паузу
+            // с явной надписью, что снимать дальше, и ждём подтверждения
+            // (см. continueToNextStep) - иначе иногда успевало проскочить
+            // сразу два шага подряд или случайно снять не то (лицо, руку).
+            setNextStepInfo({ side: footSideRef.current, index: next });
+            setPhase('step-transition');
           }
         }, 700);
       }
@@ -306,17 +318,23 @@ export default function ScanPage() {
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
 
-    const areaRatio = ((maxX - minX) * (maxY - minY)) / (crop.size * crop.size);
+    const boxW = maxX - minX;
+    const boxH = maxY - minY;
+    const areaRatio = (boxW * boxH) / (crop.size * crop.size);
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
     const cropCenterX = crop.x + crop.size / 2;
     const cropCenterY = crop.y + crop.size / 2;
     const offX = Math.abs(cx - cropCenterX) / crop.size;
     const offY = Math.abs(cy - cropCenterY) / crop.size;
+    const aspect = Math.max(boxW, boxH) / Math.max(1, Math.min(boxW, boxH));
 
     if (areaRatio < MIN_AREA_RATIO) return 'too-far';
     if (areaRatio > MAX_AREA_RATIO) return 'too-close';
     if (offX > CENTER_TOLERANCE || offY > CENTER_TOLERANCE) return 'off-center';
+    // Не похоже по форме на стопу (слишком "квадратно") - вероятно, это не
+    // стопа, а что-то другое случайно попало в кадр (лицо, рука и т.д.).
+    if (aspect < MIN_ASPECT_RATIO) return 'searching';
     return 'aligned';
   }
 
@@ -374,10 +392,12 @@ export default function ScanPage() {
     rafRef.current = requestAnimationFrame(() => detectionLoop());
   }
 
-  function continueToLeftFoot() {
-    setFootSide('left');
-    footSideRef.current = 'left';
-    setStepIndex(0);
+  function continueToNextStep() {
+    if (!nextStepInfo) return;
+    setFootSide(nextStepInfo.side);
+    footSideRef.current = nextStepInfo.side;
+    setStepIndex(nextStepInfo.index);
+    setNextStepInfo(null);
     setPhase('scanning');
   }
 
@@ -386,6 +406,7 @@ export default function ScanPage() {
     setPhase('loading');
     setFootSide('right');
     footSideRef.current = 'right';
+    setNextStepInfo(null);
     try {
       // Модель (~несколько МБ) грузится и разогревается заранее, чтобы не
       // тормозить первый кадр съёмки.
@@ -455,7 +476,8 @@ export default function ScanPage() {
             </div>
             <div className={styles.statusBar}>
               <div className={styles.statusText}>
-                Шаг {stepIndex + 1}/{STEPS.length}: {STEPS[stepIndex].label}
+                {footSide === 'right' ? 'Правая' : 'Левая'} стопа — Шаг {stepIndex + 1}/{STEPS.length}:{' '}
+                {STEPS[stepIndex].label}
               </div>
             </div>
             {DEBUG && <div className={styles.debug}>{debugInfo}</div>}
@@ -477,12 +499,16 @@ export default function ScanPage() {
         </div>
       )}
 
-      {phase === 'foot-switch' && (
+      {phase === 'step-transition' && nextStepInfo && (
         <div className={styles.intro}>
-          <h1>Правая стопа готова!</h1>
-          <p>Теперь переложи камеру (или стопу) и отсканируем левую стопу — те же 4 ракурса.</p>
-          <button className={styles.startButton} onClick={continueToLeftFoot}>
-            Сканировать левую стопу
+          <h1>Снято!</h1>
+          <p>
+            Дальше: {nextStepInfo.side === 'right' ? 'правая' : 'левая'} стопа — шаг {nextStepInfo.index + 1}/
+            {STEPS.length}: <strong>{STEPS[nextStepInfo.index].label}</strong>
+            {nextStepInfo.index === 0 && nextStepInfo.side === 'left' ? ' (переложи камеру/стопу)' : ''}
+          </p>
+          <button className={styles.startButton} onClick={continueToNextStep}>
+            Готов, снимаем
           </button>
         </div>
       )}
