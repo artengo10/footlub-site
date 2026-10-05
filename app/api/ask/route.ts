@@ -30,30 +30,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Вопрос не может быть пустым' }, { status: 400 });
   }
 
-  const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const resendKey = process.env.RESEND_API_KEY;
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
 
-  if (!telegramToken || !chatId) {
-    return NextResponse.json({ error: 'Бот не настроен' }, { status: 500 });
+  if (!resendKey || !adminEmail) {
+    return NextResponse.json({ error: 'Почта не настроена' }, { status: 500 });
   }
 
-  const lines = [
-    `❓ <b>Новый вопрос с сайта FootLub</b>`,
+  const text = [
+    `Новый вопрос с сайта FootLub`,
     ``,
-    `👤 Имя: ${name?.trim() || 'Аноним'}`,
-    `📧 Email: ${email}`,
-    `🔑 ID: ${userId}`,
+    `Имя: ${name?.trim() || 'Аноним'}`,
+    `Email: ${email}`,
+    `ID: ${userId}`,
     ``,
-    `📝 Вопрос:`,
+    `Вопрос:`,
     question.trim(),
     ``,
-    `<i>Ответьте на это сообщение — письмо уйдёт на email посетителя.</i>`,
+    `Чтобы ответить, нажмите «Ответить» — письмо уйдёт на email посетителя.`,
   ];
 
-  const res = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: lines.join('\n'), parse_mode: 'HTML' }),
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'FootLub <noreply@footlub.ru>',
+      to: adminEmail,
+      reply_to: email,
+      subject: `Вопрос с сайта FootLub: ${name?.trim() || 'Аноним'}`,
+      text: text.join('\n'),
+    }),
   });
 
   if (!res.ok) {
